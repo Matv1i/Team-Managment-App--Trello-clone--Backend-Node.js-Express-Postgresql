@@ -24,8 +24,7 @@ model User {
 
   authoredTasks Task[] @relation("TaskAuthor")
   assignedTask Task[] @relation("TaskAssignee")
-  taskAssignment TaskAssignment[]
-  attachments Attachment[]
+
   comments Comment[]
   managedTeams Team[] @relation("ProjectManager")
   team Team? @relation(fields: [teamId], references: [id])
@@ -86,29 +85,12 @@ model Task {
   assignee User? @relation("TaskAssignee", fields: [assignedUserId], references: [userId])
 
 
-  taskAssignments TaskAssignment[]
-  attachments Attachment[]
+
+
   comments Comment[]
 }
-model TaskAssignment{
-  id String @id @default(uuid())
-  userId String
-  taskId String
 
-  user User @relation(fields: [userId], references: [userId])
-  task Task @relation(fields: [taskId], references: [id])
-}
 
-model Attachment{
-id String @id @default(uuid())
-fileURL String
-fileName String
-taskId String
-uploadedById String
-
-task Task @relation(fields: [taskId], references: [id])
-uploadedBy User @relation(fields: [uploadedById], references: [userId])
-}
 
 model Comment{
   id String @id @default(uuid())

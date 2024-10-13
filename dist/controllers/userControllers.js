@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCookies = exports.getCurrentUserInfo = exports.loginUser = exports.createUser = exports.getUsersByTeamId = exports.getUsers = void 0;
 const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
 const SECRET_KEY = process.env.SECRET_KEY;
@@ -45,6 +46,7 @@ exports.getUsersByTeamId = getUsersByTeamId;
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const body = req.body;
+        const saltRounds = 10;
         if (!body.email || !body.username || !body.password) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -54,11 +56,13 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (existUser) {
             return res.status(400).json({ message: "User already exist" });
         }
+        const hashedPassword = yield bcrypt_1.default.hash(body.password, saltRounds);
         const newUser = yield prisma.user.create({
             data: {
                 email: body.email,
                 username: body.username,
-                password: body.password,
+                password: hashedPassword,
+                profilePictureUrl: body.profilePictureUrl,
             },
         });
         const token = jsonwebtoken_1.default.sign({
@@ -86,29 +90,25 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const existUser = yield prisma.user.findFirst({
             where: { email },
         });
-        if ((existUser === null || existUser === void 0 ? void 0 : existUser.password) === password) {
-            if (existUser) {
-                yield prisma.team.create({
-                    data: {
-                        teamName: "Test2Test",
-                        productOwnerUserId: existUser.userId,
-                        projectManagerUserId: existUser.userId,
-                    },
+        if (!existUser) {
+            return res.status(400).json({ message: "User doesnt exist" });
+        }
+        if (existUser.password) {
+            const isValidPassword = yield bcrypt_1.default.compare(password, existUser.password);
+            if (isValidPassword) {
+                const token = jsonwebtoken_1.default.sign({
+                    userId: existUser === null || existUser === void 0 ? void 0 : existUser.userId,
+                    username: existUser === null || existUser === void 0 ? void 0 : existUser.username,
+                    teamId: existUser === null || existUser === void 0 ? void 0 : existUser.teamId,
+                }, SECRET_KEY, {
+                    expiresIn: "1h",
                 });
+                res.cookie("token", token, {
+                    httpOnly: true,
+                    maxAge: 3600000,
+                });
+                return res.json({ token });
             }
-            console.log(existUser);
-            const token = jsonwebtoken_1.default.sign({
-                userId: existUser === null || existUser === void 0 ? void 0 : existUser.userId,
-                username: existUser === null || existUser === void 0 ? void 0 : existUser.username,
-                teamId: existUser === null || existUser === void 0 ? void 0 : existUser.teamId,
-            }, SECRET_KEY, {
-                expiresIn: "1h",
-            });
-            res.cookie("token", token, {
-                httpOnly: true,
-                maxAge: 3600000,
-            });
-            return res.json({ token });
         }
         else {
             return res.status(401).json({ message: "Logging went wrong" });

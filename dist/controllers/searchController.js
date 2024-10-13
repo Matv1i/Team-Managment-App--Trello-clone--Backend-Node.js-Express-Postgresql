@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchTeams = exports.search = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
+//Unused endpoint Global search
 const search = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { query } = req.query;
     try {

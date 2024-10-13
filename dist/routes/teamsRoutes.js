@@ -6,4 +6,7 @@ const router = (0, express_1.Router)();
 router.get("/", teamControllers_1.getTeams);
 router.patch("/", teamControllers_1.changeTeam);
 router.get("/:teamId", teamControllers_1.getTeamById);
+router.post("/", teamControllers_1.createTeam);
+router.patch("/edit", teamControllers_1.editTeam);
+router.delete("/delete/", teamControllers_1.deleteTeam);
 exports.default = router;

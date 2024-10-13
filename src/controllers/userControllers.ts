@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { PrismaClient } from "@prisma/client"
 import { error } from "console"
+import bcrypt from "bcrypt"
 
 import jwt from "jsonwebtoken"
 
@@ -39,6 +40,7 @@ export const createUser = async (
   try {
     const body = req.body
 
+    const saltRounds = 10
     if (!body.email || !body.username || !body.password) {
       return res.status(400).json({ message: "All fields are required" })
     }
@@ -50,11 +52,14 @@ export const createUser = async (
     if (existUser) {
       return res.status(400).json({ message: "User already exist" })
     }
+
+    const hashedPassword = await bcrypt.hash(body.password, saltRounds)
     const newUser = await prisma.user.create({
       data: {
         email: body.email,
         username: body.username,
-        password: body.password,
+        password: hashedPassword,
+        profilePictureUrl: body.profilePictureUrl,
       },
     })
 
@@ -93,37 +98,31 @@ export const loginUser = async (
     const existUser = await prisma.user.findFirst({
       where: { email },
     })
+    if (!existUser) {
+      return res.status(400).json({ message: "User doesnt exist" })
+    }
 
-    if (existUser?.password === password) {
-      if (existUser) {
-        await prisma.team.create({
-          data: {
-            teamName: "Test2Test",
-            productOwnerUserId: existUser.userId,
-            projectManagerUserId: existUser.userId,
+    if (existUser.password) {
+      const isValidPassword = await bcrypt.compare(password, existUser.password)
+      if (isValidPassword) {
+        const token = jwt.sign(
+          {
+            userId: existUser?.userId,
+            username: existUser?.username,
+            teamId: existUser?.teamId,
           },
+          SECRET_KEY,
+          {
+            expiresIn: "1h",
+          }
+        )
+        res.cookie("token", token, {
+          httpOnly: true,
+          maxAge: 3600000,
         })
+
+        return res.json({ token })
       }
-
-      console.log(existUser)
-
-      const token = jwt.sign(
-        {
-          userId: existUser?.userId,
-          username: existUser?.username,
-          teamId: existUser?.teamId,
-        },
-        SECRET_KEY,
-        {
-          expiresIn: "1h",
-        }
-      )
-      res.cookie("token", token, {
-        httpOnly: true,
-        maxAge: 3600000,
-      })
-
-      return res.json({ token })
     } else {
       return res.status(401).json({ message: "Logging went wrong" })
     }

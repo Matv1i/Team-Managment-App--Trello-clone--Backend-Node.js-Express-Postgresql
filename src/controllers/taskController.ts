@@ -23,6 +23,32 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Error retrieving tasks" })
   }
 }
+export const deleteTask = async (
+  req: Request,
+  res: Response
+): Promise<Response | void> => {
+  const { id } = req.body
+  console.log(req.body)
+  try {
+    const task = await prisma.task.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!task) {
+      return res.status(400).json({ message: "Task doesn't exist" })
+    }
+
+    await prisma.task.delete({
+      where: { id },
+    })
+
+    return res.status(200)
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting task" })
+  }
+}
 
 export const createTask = async (
   req: Request,

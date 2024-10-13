@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createTeam = exports.getTeamById = exports.changeTeam = exports.getTeams = void 0;
+exports.editTeam = exports.deleteTeam = exports.createTeam = exports.getTeamById = exports.changeTeam = exports.getTeams = void 0;
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
@@ -85,7 +85,7 @@ const getTeamById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!team) {
             return res.status(500).json({ message: "Team wasnt found!" });
         }
-        return res.status(200).json({ team });
+        return res.status(200).json(team);
     }
     catch (error) {
         res.status(500).json({ message: "Error retrieving teams" });
@@ -94,11 +94,106 @@ const getTeamById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.getTeamById = getTeamById;
 const createTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { teamName, userId, projectManagerUserId } = req.params;
+        const { teamName, productOwnerUserId, projectManagerUserId } = req.body;
         const team = yield prisma.team.create({
             data: {
                 teamName,
-                productOwnerUserId: userId,
+                productOwnerUserId,
+                projectManagerUserId,
+            },
+        });
+        if (!team) {
+            return res.status(500).json({ message: "Team wasnt found!" });
+        }
+        yield prisma.user.update({
+            where: {
+                userId: productOwnerUserId,
+            },
+            data: {
+                teamId: team.id,
+            },
+        });
+        return res.status(200).json({ team });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error retrieving teams" });
+    }
+});
+exports.createTeam = createTeam;
+const deleteTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { teamId, userId } = req.body;
+    try {
+        // Шаг 1. Найти команду, чтобы проверить, существует ли она
+        const team = yield prisma.team.findFirst({
+            where: {
+                id: teamId,
+            },
+        });
+        if (!team) {
+            return res.status(404).json({ message: "Team not found" });
+        }
+        // Шаг 2. Удалить все проекты, связанные с командой
+        const projectIds = yield prisma.projectTeam
+            .findMany({
+            where: { teamId },
+            select: { projectId: true },
+        })
+            .then((projects) => projects.map((p) => p.projectId));
+        // Удалить все связанные задачи (Task) и связанные с ними данные (Attachments, Comments)
+        yield prisma.comment.deleteMany({
+            where: { taskId: { in: projectIds } },
+        });
+        yield prisma.attachment.deleteMany({
+            where: { taskId: { in: projectIds } },
+        });
+        yield prisma.taskAssignment.deleteMany({
+            where: { taskId: { in: projectIds } },
+        });
+        yield prisma.task.deleteMany({
+            where: { projectId: { in: projectIds } },
+        });
+        yield prisma.user.update({
+            where: {
+                userId,
+                teamId,
+            },
+            data: {
+                teamId: null,
+            },
+        });
+        // Удалить проекты
+        yield prisma.projectTeam.deleteMany({
+            where: { teamId },
+        });
+        yield prisma.project.deleteMany({
+            where: { id: { in: projectIds } },
+        });
+        // Шаг 3. Удалить саму команду
+        const deletedTeam = yield prisma.team.delete({
+            where: { id: teamId },
+        });
+        return res.status(200).json({
+            message: "Team and related data deleted successfully",
+            deletedTeam,
+        });
+    }
+    catch (error) {
+        console.error("Error deleting team and related data:", error);
+        return res
+            .status(500)
+            .json({ message: "An error occurred while deleting the team" });
+    }
+});
+exports.deleteTeam = deleteTeam;
+const editTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id, teamName, projectManagerUserId } = req.body;
+        const team = yield prisma.team.update({
+            where: {
+                id,
+            },
+            data: {
+                teamName,
                 projectManagerUserId,
             },
         });
@@ -111,4 +206,4 @@ const createTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         res.status(500).json({ message: "Error retrieving teams" });
     }
 });
-exports.createTeam = createTeam;
+exports.editTeam = editTeam;
