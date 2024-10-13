@@ -8,7 +8,7 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
     const tasks = await prisma.task.findMany({
       where: {
-        projectId: Number(projectId),
+        projectId: String(projectId),
       },
       include: {
         author: true,
@@ -27,7 +27,7 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
 export const createTask = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<Response | void> => {
   const {
     title,
     description,
@@ -41,6 +41,19 @@ export const createTask = async (
     authorUserId,
     assignedUserId,
   } = req.body
+  console.log({
+    title,
+    description,
+    status,
+    priority,
+    tags,
+    startDate,
+    dueDate,
+    points,
+    projectId,
+    authorUserId,
+    assignedUserId,
+  })
 
   try {
     const newTask = await prisma.task.create({
@@ -58,9 +71,9 @@ export const createTask = async (
         assignedUserId,
       },
     })
-    res.status(201).json(newTask)
+    return res.status(201).json(newTask)
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       message: `Error creating task. Error:${error}`,
     })
   }
@@ -75,7 +88,7 @@ export const updateTaskStatus = async (
   try {
     const updatedTask = await prisma.task.update({
       where: {
-        id: Number(taskId),
+        id: String(taskId),
       },
       data: {
         status: status,
@@ -98,9 +111,9 @@ export const getUserTasks = async (
     const tasks = await prisma.task.findMany({
       where: {
         OR: [
-          { authorUserId: Number(userId) },
+          { authorUserId: String(userId) },
           {
-            assignedUserId: Number(userId),
+            assignedUserId: String(userId),
           },
         ],
       },

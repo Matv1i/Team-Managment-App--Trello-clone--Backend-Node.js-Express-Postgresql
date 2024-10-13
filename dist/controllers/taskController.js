@@ -17,7 +17,7 @@ const getTasks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const tasks = yield prisma.task.findMany({
             where: {
-                projectId: Number(projectId),
+                projectId: String(projectId),
             },
             include: {
                 author: true,
@@ -35,6 +35,19 @@ const getTasks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.getTasks = getTasks;
 const createTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, description, status, priority, tags, startDate, dueDate, points, projectId, authorUserId, assignedUserId, } = req.body;
+    console.log({
+        title,
+        description,
+        status,
+        priority,
+        tags,
+        startDate,
+        dueDate,
+        points,
+        projectId,
+        authorUserId,
+        assignedUserId,
+    });
     try {
         const newTask = yield prisma.task.create({
             data: {
@@ -51,10 +64,10 @@ const createTask = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 assignedUserId,
             },
         });
-        res.status(201).json(newTask);
+        return res.status(201).json(newTask);
     }
     catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             message: `Error creating task. Error:${error}`,
         });
     }
@@ -66,7 +79,7 @@ const updateTaskStatus = (req, res) => __awaiter(void 0, void 0, void 0, functio
     try {
         const updatedTask = yield prisma.task.update({
             where: {
-                id: Number(taskId),
+                id: String(taskId),
             },
             data: {
                 status: status,
@@ -87,9 +100,9 @@ const getUserTasks = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const tasks = yield prisma.task.findMany({
             where: {
                 OR: [
-                    { authorUserId: Number(userId) },
+                    { authorUserId: String(userId) },
                     {
-                        assignedUserId: Number(userId),
+                        assignedUserId: String(userId),
                     },
                 ],
             },
