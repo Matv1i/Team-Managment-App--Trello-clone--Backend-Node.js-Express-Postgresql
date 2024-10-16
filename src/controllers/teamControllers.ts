@@ -158,14 +158,6 @@ export const deleteTeam = async (
       where: { taskId: { in: projectIds } },
     })
 
-    await prisma.attachment.deleteMany({
-      where: { taskId: { in: projectIds } },
-    })
-
-    await prisma.taskAssignment.deleteMany({
-      where: { taskId: { in: projectIds } },
-    })
-
     await prisma.task.deleteMany({
       where: { projectId: { in: projectIds } },
     })
@@ -179,7 +171,6 @@ export const deleteTeam = async (
       },
     })
 
-    // Удалить проекты
     await prisma.projectTeam.deleteMany({
       where: { teamId },
     })
@@ -188,7 +179,6 @@ export const deleteTeam = async (
       where: { id: { in: projectIds } },
     })
 
-    // Шаг 3. Удалить саму команду
     const deletedTeam = await prisma.team.delete({
       where: { id: teamId },
     })

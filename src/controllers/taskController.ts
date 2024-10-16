@@ -14,7 +14,6 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
         author: true,
         assignee: true,
         comments: true,
-        attachments: true,
       },
     })
 

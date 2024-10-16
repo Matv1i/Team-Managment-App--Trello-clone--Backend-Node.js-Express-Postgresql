@@ -15,6 +15,7 @@ const taskRoutes_1 = __importDefault(require("./routes/taskRoutes"));
 const searchRoutes_1 = __importDefault(require("./routes/searchRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const teamsRoutes_1 = __importDefault(require("./routes/teamsRoutes"));
+const commentsRoutes_1 = __importDefault(require("./routes/commentsRoutes"));
 const authCheck_1 = require("./middleware/authCheck");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -38,6 +39,7 @@ app.use("/tasks", authCheck_1.authCheck, taskRoutes_1.default);
 app.use("/search", authCheck_1.authCheck, searchRoutes_1.default);
 app.use("/users", userRoutes_1.default);
 app.use("/teams", authCheck_1.authCheck, teamsRoutes_1.default);
+app.use("/comments", authCheck_1.authCheck, commentsRoutes_1.default);
 app.listen(PORT, () => {
     console.log(`Server runnig out port ${PORT}`);
 });

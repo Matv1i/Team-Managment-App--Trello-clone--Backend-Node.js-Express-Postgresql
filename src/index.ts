@@ -12,6 +12,7 @@ import taskRoutes from "./routes/taskRoutes"
 import searchRoutes from "./routes/searchRoutes"
 import userRoutes from "./routes/userRoutes"
 import teamsRoutes from "./routes/teamsRoutes"
+import commentsRoutes from "./routes/commentsRoutes"
 import { authCheck } from "./middleware/authCheck"
 
 dotenv.config()
@@ -42,6 +43,7 @@ app.use("/tasks", authCheck, taskRoutes)
 app.use("/search", authCheck, searchRoutes)
 app.use("/users", userRoutes)
 app.use("/teams", authCheck, teamsRoutes)
+app.use("/comments", authCheck, commentsRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server runnig out port ${PORT}`)

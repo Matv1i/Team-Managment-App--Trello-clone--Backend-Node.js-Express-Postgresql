@@ -143,12 +143,6 @@ const deleteTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         yield prisma.comment.deleteMany({
             where: { taskId: { in: projectIds } },
         });
-        yield prisma.attachment.deleteMany({
-            where: { taskId: { in: projectIds } },
-        });
-        yield prisma.taskAssignment.deleteMany({
-            where: { taskId: { in: projectIds } },
-        });
         yield prisma.task.deleteMany({
             where: { projectId: { in: projectIds } },
         });
@@ -161,14 +155,12 @@ const deleteTeam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 teamId: null,
             },
         });
-        // Удалить проекты
         yield prisma.projectTeam.deleteMany({
             where: { teamId },
         });
         yield prisma.project.deleteMany({
             where: { id: { in: projectIds } },
         });
-        // Шаг 3. Удалить саму команду
         const deletedTeam = yield prisma.team.delete({
             where: { id: teamId },
         });
